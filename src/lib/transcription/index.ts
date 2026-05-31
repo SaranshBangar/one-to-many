@@ -100,7 +100,20 @@ function exec(cmd: string, args: string[]): Promise<void> {
     const p = spawn(cmd, args, { stdio: ["ignore", "ignore", "pipe"] });
     let err = "";
     p.stderr.on("data", (d) => (err += d.toString()));
-    p.on("error", reject);
+    p.on("error", (e) => {
+      // ENOENT = the binary isn't on PATH. Common on serverless hosts (Vercel),
+      // which have no yt-dlp / ffmpeg / whisper. Translate the cryptic
+      // "spawn <cmd> ENOENT" into a clear, user-facing explanation.
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+        reject(
+          new Error(
+            `Audio/video transcription isn't available on this deployment ("${cmd}" is not installed). Paste a transcript instead, or wire a hosted speech-to-text API in src/lib/transcription/index.ts.`,
+          ),
+        );
+        return;
+      }
+      reject(e);
+    });
     p.on("close", (code) =>
       code === 0
         ? resolve()
