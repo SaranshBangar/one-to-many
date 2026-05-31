@@ -7,12 +7,9 @@ import { AdminView, type AdminUserRow } from "@/components/admin-view";
 
 export default async function AdminPage() {
   const db = await getDb();
-  const [users, projects] = await Promise.all([
-    db.listUsers(),
-    db.listAllProjects(),
-  ]);
+  const [users, projects] = await Promise.all([db.listUsers(), db.listAllProjects()]);
 
-  // Project count per user — single pass.
+  // Project count per user, single pass.
   const projectsByUser = new Map<string, number>();
   for (const p of projects) {
     projectsByUser.set(p.userId, (projectsByUser.get(p.userId) ?? 0) + 1);
@@ -37,7 +34,7 @@ export default async function AdminPage() {
   });
 
   const paidUsers = users.filter((u) => u.plan !== "free");
-  // Estimated monthly recurring revenue — sum of each paid user's plan price.
+  // Estimated monthly recurring revenue, sum of each paid user's plan price.
   // No real payment ledger exists, so this is an estimate, not booked revenue.
   const estMrr = paidUsers.reduce((sum, u) => sum + PLANS[u.plan].priceMonthly, 0);
 
@@ -57,9 +54,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1.5">
-        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
-          Operator console
-        </span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted">Operator console</span>
         <h1 className="display text-3xl">Users &amp; revenue</h1>
       </div>
 
@@ -68,9 +63,7 @@ export default async function AdminPage() {
           <Card key={label} className="flex flex-col gap-3">
             <div className="flex items-center gap-2 text-muted">
               <Icon size={16} className="text-accent" />
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em]">
-                {label}
-              </span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.1em]">{label}</span>
             </div>
             <span className="display text-[32px] leading-none">{value}</span>
           </Card>
@@ -84,9 +77,7 @@ export default async function AdminPage() {
             <span className="text-sm text-muted">{p.name}</span>
           </div>
         ))}
-        <span className="ml-auto font-mono text-[11px] text-muted-2">
-          Est. annualized: ₹{(estMrr * 12).toLocaleString("en-IN")}
-        </span>
+        <span className="ml-auto font-mono text-[11px] text-muted-2">Est. annualized: ₹{(estMrr * 12).toLocaleString("en-IN")}</span>
       </Card>
 
       <AdminView rows={rows} />

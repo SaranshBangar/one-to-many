@@ -9,7 +9,7 @@ export function isAdmin(email: string | null | undefined): boolean {
 }
 
 /**
- * Current user iff they're an admin — null otherwise. Use to gate admin pages
+ * Current user iff they're an admin, null otherwise. Use to gate admin pages
  * (redirect on null) and API routes (403 on null). Never trust the client.
  */
 export async function getAdminUser(): Promise<AppUser | null> {

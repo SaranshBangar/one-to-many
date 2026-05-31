@@ -15,7 +15,7 @@ export type CheckoutArgs = {
  * Stripe Checkout session.
  */
 export async function createCheckout(args: CheckoutArgs): Promise<string> {
-  // Free tier never goes through Stripe — the checkout route switches it directly.
+  // Free tier never goes through Stripe, the checkout route switches it directly.
   if (args.tier === "free") {
     throw new Error("Free tier does not use Stripe checkout");
   }
@@ -50,11 +50,7 @@ export async function createCheckout(args: CheckoutArgs): Promise<string> {
 export async function constructWebhookEvent(payload: string, sig: string) {
   const Stripe = (await import("stripe")).default;
   const stripe = new Stripe(env.stripe.secretKey!);
-  return stripe.webhooks.constructEvent(
-    payload,
-    sig,
-    env.stripe.webhookSecret!,
-  );
+  return stripe.webhooks.constructEvent(payload, sig, env.stripe.webhookSecret!);
 }
 
 export function tierFromPriceId(priceId: string): PlanTier | null {

@@ -33,7 +33,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   };
 }
 
-/** Require a user or throw — for API routes. */
+/** Require a user or throw, for API routes. */
 export async function requireUser(): Promise<AuthUser> {
   const u = await getAuthUser();
   if (!u) throw new UnauthorizedError();

@@ -1,18 +1,13 @@
 import type { Platform, PlanTier } from "./db/types";
 
-export const ALL_PLATFORMS: Platform[] = [
-  "linkedin",
-  "twitter",
-  "email",
-  "shorts",
-];
+export const ALL_PLATFORMS: Platform[] = ["linkedin", "twitter", "email", "shorts"];
 
 export type PlanDef = {
   tier: PlanTier;
   name: string;
   /** Monthly price in INR (₹). Free tier is 0. */
   priceMonthly: number;
-  /** Stripe price id env key — resolved in lib/stripe. Absent for the free tier. */
+  /** Stripe price id env key, resolved in lib/stripe. Absent for the free tier. */
   priceEnv?: "priceStarter" | "pricePro" | "priceMax";
   /** Repurpose jobs allowed per billing month. */
   piecesPerMonth: number;
@@ -38,12 +33,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     customTones: false,
     prioritySupport: false,
     blurb: "Try it on a real episode.",
-    features: [
-      "5 pieces / month",
-      "2 platforms per piece",
-      "Authentic tone",
-      "Copy & download",
-    ],
+    features: ["5 pieces / month", "2 platforms per piece", "Authentic tone", "Copy & download"],
   },
   starter: {
     tier: "starter",
@@ -56,12 +46,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     customTones: false,
     prioritySupport: false,
     blurb: "Kick the tires on real episodes.",
-    features: [
-      "10 pieces / month",
-      "3 outputs per piece",
-      "Basic platforms",
-      "Copy & download",
-    ],
+    features: ["10 pieces / month", "3 outputs per piece", "Basic platforms", "Copy & download"],
   },
   pro: {
     tier: "pro",
@@ -74,12 +59,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     customTones: false,
     prioritySupport: false,
     blurb: "For founders publishing every week.",
-    features: [
-      "20 pieces / month",
-      "All 4 platforms",
-      "Tone selector",
-      "Inline editing & regenerate",
-    ],
+    features: ["20 pieces / month", "All 4 platforms", "Tone selector", "Inline editing & regenerate"],
     highlight: true,
   },
   max: {
@@ -93,21 +73,11 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     customTones: true,
     prioritySupport: true,
     blurb: "Teams and high-volume operators.",
-    features: [
-      "Unlimited pieces",
-      "Custom tones",
-      "Priority support",
-      "Everything in Pro",
-    ],
+    features: ["Unlimited pieces", "Custom tones", "Priority support", "Everything in Pro"],
   },
 };
 
-export const PLAN_LIST: PlanDef[] = [
-  PLANS.free,
-  PLANS.starter,
-  PLANS.pro,
-  PLANS.max,
-];
+export const PLAN_LIST: PlanDef[] = [PLANS.free, PLANS.starter, PLANS.pro, PLANS.max];
 
 /** 20% annual discount, billed yearly. */
 export function annualPrice(monthly: number) {

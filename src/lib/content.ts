@@ -1,12 +1,9 @@
 import type { Platform, Tone, ProjectStatus } from "./db/types";
 
-export const TONES: Record<
-  Tone,
-  { label: string; description: string; guidance: string }
-> = {
+export const TONES: Record<Tone, { label: string; description: string; guidance: string }> = {
   authentic: {
     label: "Authentic",
-    description: "Sounds like you — honest, personal, a little raw.",
+    description: "Sounds like you, honest, personal, a little raw.",
     guidance:
       "Write like a founder talking to peers. First person. Specific, lived detail over generalities. Short punchy lines. No corporate hedging, no hype, no emoji spam. It should feel hand-written.",
   },
@@ -26,10 +23,7 @@ export const TONES: Record<
 
 export const TONE_KEYS = Object.keys(TONES) as Tone[];
 
-export const PLATFORMS: Record<
-  Platform,
-  { label: string; short: string; emoji: string; blurb: string }
-> = {
+export const PLATFORMS: Record<Platform, { label: string; short: string; emoji: string; blurb: string }> = {
   linkedin: {
     label: "LinkedIn post",
     short: "LinkedIn",

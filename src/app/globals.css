@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  OneToMany design system — matches the Claude Design mockup (docs handoff).
+  OneToMany design system, matches the Claude Design mockup (docs handoff).
   Dark-only, tool-first. Space Grotesk carries the voice; JetBrains Mono handles
   every label, button and metric so the product reads like an instrument.
   Layered charcoals + founder orange. 8px-ish grid, radii 6/9/14/20.
@@ -35,7 +35,7 @@
   --error-soft: rgba(255, 90, 82, 0.12);
   --ring: var(--accent-soft);
 
-  /* platform tints (generic, muted — not brand logos) */
+  /* platform tints (generic, muted, not brand logos) */
   --p-linkedin: #4d9fe6;
   --p-x: #e8e8e8;
   --p-email: #c08bff;
@@ -128,7 +128,7 @@ body {
   background: var(--accent-soft);
 }
 
-/* Display type — tight, confident. */
+/* Display type, tight, confident. */
 .display {
   font-weight: 600;
   letter-spacing: -0.03em;

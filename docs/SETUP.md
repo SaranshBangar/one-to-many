@@ -1,4 +1,4 @@
-# OneToMany — Setup & Go-Live Checklist
+# OneToMany, Setup & Go-Live Checklist
 
 Everything you need to take the app from "runs fully mocked" to "live in production."
 
@@ -11,7 +11,7 @@ curl http://localhost:3000/api/health
 # {"ok":true,"services":{"auth":"mock","db":"mock","ai":"mock","payments":"mock","transcription":"mock"}}
 ```
 
-> `MOCK_MODE=1` in `.env.local` forces **everything** to mock regardless of keys — handy for demos.
+> `MOCK_MODE=1` in `.env.local` forces **everything** to mock regardless of keys, handy for demos.
 
 ---
 
@@ -31,16 +31,16 @@ npm run dev                  # http://localhost:3000
 
 ---
 
-## 1. Auth — Clerk
+## 1. Auth, Clerk
 
 Gives you real sign-up / sign-in / Google login. Until configured, the app uses a fake "demo" founder and skips login.
 
 **Env vars**
 
-| Var | Where |
-| --- | --- |
+| Var                                 | Where                      |
+| ----------------------------------- | -------------------------- |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API keys |
-| `CLERK_SECRET_KEY` | Clerk dashboard → API keys |
+| `CLERK_SECRET_KEY`                  | Clerk dashboard → API keys |
 
 **Steps**
 
@@ -65,17 +65,17 @@ Gives you real sign-up / sign-in / Google login. Until configured, the app uses 
 
 ---
 
-## 2. Database — Firebase / Firestore
+## 2. Database, Firebase / Firestore
 
 Persists users + projects. Until configured, data lives in memory and resets on restart (with one seeded demo project).
 
 **Env vars**
 
-| Var | Where |
-| --- | --- |
-| `FIREBASE_PROJECT_ID` | service-account JSON → `project_id` |
-| `FIREBASE_CLIENT_EMAIL` | service-account JSON → `client_email` |
-| `FIREBASE_PRIVATE_KEY` | service-account JSON → `private_key` (keep the `\n`s) |
+| Var                     | Where                                                 |
+| ----------------------- | ----------------------------------------------------- |
+| `FIREBASE_PROJECT_ID`   | service-account JSON → `project_id`                   |
+| `FIREBASE_CLIENT_EMAIL` | service-account JSON → `client_email`                 |
+| `FIREBASE_PRIVATE_KEY`  | service-account JSON → `private_key` (keep the `\n`s) |
 
 **Steps**
 
@@ -88,22 +88,23 @@ Persists users + projects. Until configured, data lives in memory and resets on 
    FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your-project-id.iam.gserviceaccount.com
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
    ```
+
    - **Keep the surrounding quotes** and the literal `\n` escapes. The app converts `\n` back to newlines.
-5. Firestore security rules: the app uses the **Admin SDK** (server-side), which bypasses rules — so you can leave rules locked (`allow read, write: if false;`). No client-side Firestore access is used.
+5. Firestore security rules: the app uses the **Admin SDK** (server-side), which bypasses rules, so you can leave rules locked (`allow read, write: if false;`). No client-side Firestore access is used.
 6. Restart. `/api/health` → `"db":"live"`. Collections `users` and `projects` are created on first write.
 
 ---
 
-## 3. LLM — Google Gemini
+## 3. LLM, Google Gemini
 
 Generates the actual posts. Until configured, you get clearly-labeled canned sample outputs.
 
 **Env vars**
 
-| Var | Where |
-| --- | --- |
-| `GEMINI_API_KEY` | Google AI Studio |
-| `GEMINI_MODEL` | optional, defaults to `gemini-2.0-flash` |
+| Var              | Where                                    |
+| ---------------- | ---------------------------------------- |
+| `GEMINI_API_KEY` | Google AI Studio                         |
+| `GEMINI_MODEL`   | optional, defaults to `gemini-2.0-flash` |
 
 **Steps**
 
@@ -118,32 +119,32 @@ Generates the actual posts. Until configured, you get clearly-labeled canned sam
 
 **Notes**
 
-- The voice/tone prompts (the product's differentiator) live in `src/lib/ai/prompts.ts` — tune them here.
+- The voice/tone prompts (the product's differentiator) live in `src/lib/ai/prompts.ts`, tune them here.
 - Swap models via `GEMINI_MODEL` (e.g. `gemini-2.5-flash`).
 
 ---
 
-## 4. Payments — Stripe
+## 4. Payments, Stripe
 
 Real subscriptions + plan upgrades. Until configured, "checkout" simulates an instant upgrade with no charge.
 
 **Env vars**
 
-| Var | Where |
-| --- | --- |
-| `STRIPE_SECRET_KEY` | Stripe dashboard → Developers → API keys |
-| `STRIPE_PRICE_STARTER` | price id for the $19 plan |
-| `STRIPE_PRICE_PRO` | price id for the $39 plan |
-| `STRIPE_PRICE_MAX` | price id for the $99 plan |
+| Var                     | Where                                                      |
+| ----------------------- | ---------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`     | Stripe dashboard → Developers → API keys                   |
+| `STRIPE_PRICE_STARTER`  | price id for the $19 plan                                  |
+| `STRIPE_PRICE_PRO`      | price id for the $39 plan                                  |
+| `STRIPE_PRICE_MAX`      | price id for the $99 plan                                  |
 | `STRIPE_WEBHOOK_SECRET` | from `stripe listen` (dev) or the dashboard webhook (prod) |
 
 **Steps**
 
 1. Create an account at <https://dashboard.stripe.com>. Stay in **Test mode** while developing.
 2. **Products** → create three recurring products matching the plans (prices come from `src/lib/plans.ts`):
-   - Starter — **$19 / month**
-   - Pro — **$39 / month**
-   - Max — **$99 / month**
+   - Starter, **$19 / month**
+   - Pro, **$39 / month**
+   - Max, **$99 / month**
    - (Optional: add a yearly price each for the annual −20% toggle.)
 3. For each product, copy its **Price ID** (`price_...`) into `.env.local`:
    ```env
@@ -152,7 +153,7 @@ Real subscriptions + plan upgrades. Until configured, "checkout" simulates an in
    STRIPE_PRICE_PRO=price_xxx
    STRIPE_PRICE_MAX=price_xxx
    ```
-4. **Webhook (local dev)** — install the Stripe CLI (<https://stripe.com/docs/stripe-cli>), then:
+4. **Webhook (local dev)**, install the Stripe CLI (<https://stripe.com/docs/stripe-cli>), then:
    ```bash
    stripe login
    stripe listen --forward-to localhost:3000/api/stripe/webhook
@@ -170,18 +171,18 @@ Real subscriptions + plan upgrades. Until configured, "checkout" simulates an in
 
 ---
 
-## 5. Transcription — local Whisper (+ ffmpeg, yt-dlp)
+## 5. Transcription, local Whisper (+ ffmpeg, yt-dlp)
 
-Transcribes uploaded audio/video and YouTube links. Until configured, you get a canned transcript. **Pasted transcripts never need this** — they go straight to Gemini.
+Transcribes uploaded audio/video and YouTube links. Until configured, you get a canned transcript. **Pasted transcripts never need this**, they go straight to Gemini.
 
 > Not installed on this machine yet. This is the most optional service; you can ship with paste-transcript + (later) wire a hosted STT instead.
 
 **Env vars**
 
-| Var | Where |
-| --- | --- |
-| `WHISPER_BIN` | path/command to the whisper CLI |
-| `WHISPER_MODEL` | optional, defaults to `base` |
+| Var             | Where                           |
+| --------------- | ------------------------------- |
+| `WHISPER_BIN`   | path/command to the whisper CLI |
+| `WHISPER_MODEL` | optional, defaults to `base`    |
 
 **Steps (Windows)**
 
@@ -196,7 +197,7 @@ Transcribes uploaded audio/video and YouTube links. Until configured, you get a 
    pip install -U openai-whisper
    ```
    Find the executable path: `(Get-Command whisper).Source`.
-3. **yt-dlp** (only for the YouTube tab — downloads audio):
+3. **yt-dlp** (only for the YouTube tab, downloads audio):
    ```powershell
    pip install -U yt-dlp
    # or: winget install yt-dlp.yt-dlp
@@ -212,7 +213,7 @@ Transcribes uploaded audio/video and YouTube links. Until configured, you get a 
 **Notes**
 
 - Adapter lives in `src/lib/transcription/index.ts`. YouTube path shells out to `yt-dlp` then `whisper`; file path runs `whisper` directly.
-- On a server/Vercel, local Whisper isn't available — for production transcription either run a separate worker, a container with ffmpeg+whisper, or swap in a hosted STT API in that adapter.
+- On a server/Vercel, local Whisper isn't available, for production transcription either run a separate worker, a container with ffmpeg+whisper, or swap in a hosted STT API in that adapter.
 
 ---
 
@@ -231,13 +232,13 @@ Used for Stripe success/cancel redirects. Set it to your real domain in producti
 
 1. Push the repo to GitHub (see "Git" below).
 2. <https://vercel.com> → **New Project** → import the repo. Framework auto-detects **Next.js**. No build config needed.
-3. **Settings → Environment Variables** — add every var from your `.env.local` (Production scope). Do **not** set `MOCK_MODE`.
+3. **Settings → Environment Variables**, add every var from your `.env.local` (Production scope). Do **not** set `MOCK_MODE`.
    - For `FIREBASE_PRIVATE_KEY`, paste the value **with** `\n` escapes, wrapped in quotes.
 4. Set `NEXT_PUBLIC_APP_URL` to your Vercel/production domain.
 5. **Stripe production webhook**: in the Stripe dashboard (Live mode) → **Developers → Webhooks → Add endpoint** → URL `https://your-domain.com/api/stripe/webhook` → subscribe to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Copy its signing secret into Vercel's `STRIPE_WEBHOOK_SECRET`.
 6. Switch Stripe keys + price IDs to **Live mode** values.
 7. In Clerk, add your production domain under **Domains**.
-8. Redeploy. Hit `/api/health` on the live URL — all services should read `live`.
+8. Redeploy. Hit `/api/health` on the live URL, all services should read `live`.
 
 ---
 
@@ -245,13 +246,13 @@ Used for Stripe success/cancel redirects. Set it to your real domain in producti
 
 After each service, confirm:
 
-| Service | Quick check |
-| --- | --- |
-| Auth | `/sign-in` shows Clerk widget; can log in → lands on `/dashboard` |
-| DB | Create a piece, restart server, it's still in **Recent projects** |
-| AI | Paste-transcript output is real content (no "Mock output" note) |
-| Payments | "Choose Pro" opens Stripe Checkout; test card upgrades the plan |
-| Transcription | Upload-file / YouTube produces a real transcript |
+| Service       | Quick check                                                       |
+| ------------- | ----------------------------------------------------------------- |
+| Auth          | `/sign-in` shows Clerk widget; can log in → lands on `/dashboard` |
+| DB            | Create a piece, restart server, it's still in **Recent projects** |
+| AI            | Paste-transcript output is real content (no "Mock output" note)   |
+| Payments      | "Choose Pro" opens Stripe Checkout; test card upgrades the plan   |
+| Transcription | Upload-file / YouTube produces a real transcript                  |
 
 `curl /api/health` should end up `{"auth":"live","db":"live","ai":"live","payments":"live","transcription":"live"}` (transcription may stay mock if you skip Whisper).
 

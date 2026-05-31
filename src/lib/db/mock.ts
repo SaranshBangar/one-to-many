@@ -11,9 +11,7 @@ type Store = {
 
 // Persist across Next.js hot reloads in dev (module re-eval) by hanging off global.
 const g = globalThis as unknown as { __o2mStore?: Store };
-const store: Store =
-  g.__o2mStore ??
-  (g.__o2mStore = { users: new Map(), projects: new Map(), seeded: false });
+const store: Store = g.__o2mStore ?? (g.__o2mStore = { users: new Map(), projects: new Map(), seeded: false });
 
 function now() {
   return new Date().toISOString();
@@ -47,36 +45,35 @@ function seed() {
     platforms: ["linkedin", "twitter", "email", "shorts"],
     transcript:
       "So when we launched, we had zero distribution. No audience, no list. The thing that actually worked was talking to ten users a week, every week, and shipping the exact thing they asked for...",
-    summary:
-      "Early traction came from relentless user conversations and shipping requested features fast, not from broad marketing.",
+    summary: "Early traction came from relentless user conversations and shipping requested features fast, not from broad marketing.",
     outputs: [
       {
         platform: "linkedin",
         tone: "authentic",
         updatedAt: now(),
         content:
-          "We got our first 100 customers with zero audience.\n\nNo list. No following. No ad budget.\n\nHere's what actually moved the needle:\n\nWe talked to 10 users every single week — and shipped the exact thing they asked for, fast.\n\nNot a roadmap. Not a survey. Real conversations, then code.\n\nThe lesson: distribution isn't a channel you find. It's trust you earn one founder-to-founder chat at a time.",
+          "We got our first 100 customers with zero audience.\n\nNo list. No following. No ad budget.\n\nHere's what actually moved the needle:\n\nWe talked to 10 users every single week, and shipped the exact thing they asked for, fast.\n\nNot a roadmap. Not a survey. Real conversations, then code.\n\nThe lesson: distribution isn't a channel you find. It's trust you earn one founder-to-founder chat at a time.",
       },
       {
         platform: "twitter",
         tone: "authentic",
         updatedAt: now(),
         content:
-          "We hit our first 100 customers with zero audience.\n\nHere's the playbook 🧵\n\n1/ No list, no following, no ads. Just one habit that compounded.\n\n2/ We talked to 10 users a week. Every week. No exceptions.\n\n3/ Then we shipped the exact thing they asked for — within days, not quarters.\n\n4/ Speed of response > size of roadmap.\n\n5/ Distribution wasn't a channel. It was trust, earned one chat at a time.",
+          "We hit our first 100 customers with zero audience.\n\nHere's the playbook 🧵\n\n1/ No list, no following, no ads. Just one habit that compounded.\n\n2/ We talked to 10 users a week. Every week. No exceptions.\n\n3/ Then we shipped the exact thing they asked for, within days, not quarters.\n\n4/ Speed of response > size of roadmap.\n\n5/ Distribution wasn't a channel. It was trust, earned one chat at a time.",
       },
       {
         platform: "email",
         tone: "authentic",
         updatedAt: now(),
         content:
-          "Subject: How we got 100 customers with no audience\n\nWe launched with zero distribution — no list, no following. What worked wasn't marketing. It was talking to 10 users a week and shipping what they asked for, fast. Full breakdown in this week's episode.",
+          "Subject: How we got 100 customers with no audience\n\nWe launched with zero distribution, no list, no following. What worked wasn't marketing. It was talking to 10 users a week and shipping what they asked for, fast. Full breakdown in this week's episode.",
       },
       {
         platform: "shorts",
         tone: "authentic",
         updatedAt: now(),
         content:
-          "HOOK: We got 100 customers with zero audience.\n\nINSIGHT: We talked to 10 users every week and shipped exactly what they asked for — in days, not quarters. Distribution wasn't a channel, it was trust.\n\nCTA: Full story on the podcast — link below.",
+          "HOOK: We got 100 customers with zero audience.\n\nINSIGHT: We talked to 10 users every week and shipped exactly what they asked for, in days, not quarters. Distribution wasn't a channel, it was trust.\n\nCTA: Full story on the podcast, link below.",
       },
     ],
     error: null,
@@ -122,9 +119,7 @@ export class MockDb implements Db {
   }
 
   async listUsers() {
-    return [...store.users.values()].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
+    return [...store.users.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async createProject(input: CreateProjectInput) {
@@ -149,9 +144,7 @@ export class MockDb implements Db {
   }
 
   async listProjects(userId: string) {
-    return [...store.projects.values()]
-      .filter((p) => p.userId === userId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return [...store.projects.values()].filter((p) => p.userId === userId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async listAllProjects() {

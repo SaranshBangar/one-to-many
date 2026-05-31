@@ -50,27 +50,18 @@ export default async function DashboardPage() {
       <div className="grid gap-5 md:grid-cols-[1.1fr_1.4fr]">
         <Card className="flex flex-col gap-[18px]">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-xs uppercase tracking-[0.1em] text-muted">
-              This month
-            </span>
+            <span className="font-mono text-xs uppercase tracking-[0.1em] text-muted">This month</span>
             <Badge variant="accent">{plan.name}</Badge>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="display text-[40px]">{usage.used}</span>
-            <span className="text-base text-muted">
-              {unlimited ? "uploads used" : `of ${usage.limit} uploads used`}
-            </span>
+            <span className="text-base text-muted">{unlimited ? "uploads used" : `of ${usage.limit} uploads used`}</span>
           </div>
           {!unlimited && <ProgressBar value={pct} />}
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11.5px] text-muted-2">
-              Resets next month
-            </span>
+            <span className="font-mono text-[11.5px] text-muted-2">Resets next month</span>
             {user.plan !== "max" && (
-              <Link
-                href="/settings?tab=billing"
-                className="text-[13px] font-semibold text-accent"
-              >
+              <Link href="/settings?tab=billing" className="text-[13px] font-semibold text-accent">
                 Upgrade for unlimited →
               </Link>
             )}
@@ -78,9 +69,7 @@ export default async function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col gap-[18px]">
-          <span className="font-mono text-xs uppercase tracking-[0.1em] text-muted">
-            Start a new repurpose
-          </span>
+          <span className="font-mono text-xs uppercase tracking-[0.1em] text-muted">Start a new repurpose</span>
           <div className="grid grid-cols-3 gap-3">
             {QUICK.map(({ icon: Icon, label }) => (
               <Link
@@ -93,9 +82,7 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
-          <span className="text-[12.5px] text-muted-2">
-            Most founders paste a YouTube link — we pull the audio automatically.
-          </span>
+          <span className="text-[12.5px] text-muted-2">Most founders paste a YouTube link, we pull the audio automatically.</span>
         </Card>
       </div>
 
@@ -125,17 +112,9 @@ export default async function DashboardPage() {
             </div>
             <div className="divide-y divide-border">
               {projects.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/projects/${p.id}`}
-                  className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-surface-2"
-                >
-                  <span className="flex-1 truncate text-sm font-medium">
-                    {p.title}
-                  </span>
-                  <span className="hidden w-[90px] font-mono text-[12.5px] text-muted sm:block">
-                    {formatDate(p.createdAt)}
-                  </span>
+                <Link key={p.id} href={`/projects/${p.id}`} className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-surface-2">
+                  <span className="flex-1 truncate text-sm font-medium">{p.title}</span>
+                  <span className="hidden w-[90px] font-mono text-[12.5px] text-muted sm:block">{formatDate(p.createdAt)}</span>
                   <span className="hidden w-[120px] items-center gap-1.5 sm:flex">
                     {p.platforms.map((pl) => (
                       <PlatformGlyph key={pl} id={pl} size={24} />

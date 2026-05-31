@@ -19,13 +19,10 @@ export async function POST(req: Request) {
   try {
     body = Body.parse(await req.json());
   } catch (e) {
-    return NextResponse.json(
-      { error: "Invalid request", detail: (e as Error).message },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid request", detail: (e as Error).message }, { status: 400 });
   }
 
-  // Free tier carries no charge — switch the plan directly, skip Stripe.
+  // Free tier carries no charge, switch the plan directly, skip Stripe.
   if (body.tier === "free") {
     const db = await getDb();
     await db.updateUser(user.id, { plan: "free" });

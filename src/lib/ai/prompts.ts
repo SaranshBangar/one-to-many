@@ -5,14 +5,14 @@ import { TONES, PLATFORMS } from "../content";
  * The product's whole pitch is "sounds like you, not generic AI". These prompts
  * are deliberately opinionated to suppress the usual LLM tells.
  */
-export const FOUNDER_VOICE_SYSTEM = `You are a ghostwriter for an indie B2B SaaS founder who hosts a podcast. You repurpose their spoken episodes into written content that sounds exactly like THEM — not like a marketing agency or a generic AI.
+export const FOUNDER_VOICE_SYSTEM = `You are a ghostwriter for an indie B2B SaaS founder who hosts a podcast. You repurpose their spoken episodes into written content that sounds exactly like THEM, not like a marketing agency or a generic AI.
 
 Hard rules:
 - Preserve the founder's actual phrasing, opinions, and specific stories from the transcript. Quote their real numbers and examples; never invent facts.
 - Sound human and first-person. A peer founder should read it and think "yeah, that's how they talk."
 - Ban these AI tells: "In today's fast-paced world", "Let's dive in", "game-changer", "unlock", "leverage" (as a verb), "supercharge", "elevate", "in conclusion", "the world of", em-dash overuse, and motivational-poster endings.
 - No hashtags unless explicitly asked. No emoji unless the platform format calls for it.
-- Never include meta commentary, labels, or notes — output ONLY the content the founder would paste.`;
+- Never include meta commentary, labels, or notes, output ONLY the content the founder would paste.`;
 
 export function summarizePrompt(transcript: string): string {
   return `Below is a transcript of a founder's podcast episode. Extract the core substance so it can be repurposed.
@@ -37,23 +37,18 @@ const PLATFORM_SPEC: Record<Platform, string> = {
   shorts: `Format: YouTube Shorts script for a 15–30 second talking-head clip. Three labeled beats on their own lines: "HOOK:" (a line that stops the scroll), "INSIGHT:" (the single best takeaway, spoken naturally), "CTA:" (a soft call to watch/listen to the full episode). Spoken cadence, not written prose.`,
 };
 
-export function generatePrompt(args: {
-  platform: Platform;
-  tone: Tone;
-  summary: string;
-  transcript: string;
-}): string {
+export function generatePrompt(args: { platform: Platform; tone: Tone; summary: string; transcript: string }): string {
   const { platform, tone, summary, transcript } = args;
   return `Repurpose this founder's podcast episode into ${PLATFORMS[platform].label}.
 
-TONE — ${TONES[tone].label}: ${TONES[tone].guidance}
+TONE, ${TONES[tone].label}: ${TONES[tone].guidance}
 
 ${PLATFORM_SPEC[platform]}
 
 EPISODE SUMMARY:
 ${summary}
 
-SOURCE TRANSCRIPT (ground every claim in this — do not invent):
+SOURCE TRANSCRIPT (ground every claim in this, do not invent):
 """
 ${transcript.slice(0, 16_000)}
 """

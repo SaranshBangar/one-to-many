@@ -19,20 +19,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OneToMany — Turn your podcast into 10 posts in 2 minutes",
-  description:
-    "AI content repurposing built for founders. Preserves your voice. No generic fluff.",
+  title: "OneToMany",
+  description: "AI content repurposing built for founders. Preserves your voice. No generic fluff.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const body = (
-    <html
-      lang="en"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full`} suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

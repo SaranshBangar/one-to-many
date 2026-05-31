@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { env, mock } from "../env";
 import type { SourceType } from "../db/types";
 
-const MOCK_TRANSCRIPT = `Welcome back to the show. Today I want to talk about how we actually got our first hundred customers, because when we launched we had nothing — no audience, no email list, no following.
+const MOCK_TRANSCRIPT = `Welcome back to the show. Today I want to talk about how we actually got our first hundred customers, because when we launched we had nothing, no audience, no email list, no following.
 
-The thing that worked wasn't some growth hack. It was talking to ten users every single week, every week without fail, and then shipping the exact thing they asked for. Not a survey, not a roadmap — real conversations, then code, within days.
+The thing that worked wasn't some growth hack. It was talking to ten users every single week, every week without fail, and then shipping the exact thing they asked for. Not a survey, not a roadmap, real conversations, then code, within days.
 
 People always ask what channel we used. There was no channel. Distribution wasn't something we found, it was trust we earned one founder-to-founder conversation at a time. The unscalable thing was the moat.
 
@@ -22,10 +22,8 @@ export type TranscribeInput = {
 };
 
 /** Resolve a source down to plain transcript text. */
-export async function transcribeSource(
-  input: TranscribeInput,
-): Promise<string> {
-  // Pasted text is already a transcript — no STT needed, works even in live mode.
+export async function transcribeSource(input: TranscribeInput): Promise<string> {
+  // Pasted text is already a transcript, no STT needed, works even in live mode.
   if (input.sourceType === "transcript") {
     return (input.pastedText ?? "").trim();
   }
@@ -62,29 +60,22 @@ async function youtubeToAudio(url: string) {
 async function runWhisper(audioPath: string): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "o2m-whisper-"));
   try {
-    await exec(env.whisper.bin!, [
-      audioPath,
-      "--model",
-      env.whisper.model,
-      "--output_format",
-      "txt",
-      "--output_dir",
-      dir,
-      "--fp16",
-      "False",
-    ]);
+    await exec(env.whisper.bin!, [audioPath, "--model", env.whisper.model, "--output_format", "txt", "--output_dir", dir, "--fp16", "False"]);
     // whisper writes <basename>.txt into output_dir
-    const base = audioPath.split(/[\\/]/).pop()!.replace(/\.[^.]+$/, "");
+    const base = audioPath
+      .split(/[\\/]/)
+      .pop()!
+      .replace(/\.[^.]+$/, "");
     let txt: string;
     try {
       txt = await readFile(join(dir, `${base}.txt`), "utf8");
     } catch (e) {
       // Whisper exits 0 even when it can't decode the audio (e.g. ffmpeg not on
-      // PATH) — it just skips the file and writes nothing. Surface that clearly
+      // PATH), it just skips the file and writes nothing. Surface that clearly
       // instead of leaking a cryptic ENOENT on the missing output file.
       if ((e as NodeJS.ErrnoException).code === "ENOENT") {
         throw new Error(
-          "Whisper produced no transcript — ensure ffmpeg is installed and on PATH (it is required to decode audio). On serverless hosts, leave WHISPER_BIN unset and use a hosted STT or pasted transcripts.",
+          "Whisper produced no transcript, ensure ffmpeg is installed and on PATH (it is required to decode audio). On serverless hosts, leave WHISPER_BIN unset and use a hosted STT or pasted transcripts.",
         );
       }
       throw e;
@@ -114,10 +105,6 @@ function exec(cmd: string, args: string[]): Promise<void> {
       }
       reject(e);
     });
-    p.on("close", (code) =>
-      code === 0
-        ? resolve()
-        : reject(new Error(`${cmd} exited ${code}: ${err.slice(-500)}`)),
-    );
+    p.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}: ${err.slice(-500)}`))));
   });
 }

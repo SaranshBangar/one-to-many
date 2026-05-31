@@ -6,7 +6,7 @@ import type { PlanTier } from "@/lib/db/types";
 
 /**
  * Simulated checkout completion (mock payments only). Upgrades the current user's
- * plan with no charge, then bounces to settings — mirrors the real Stripe
+ * plan with no charge, then bounces to settings, mirrors the real Stripe
  * success_url redirect so the rest of the app is identical in both modes.
  */
 export async function GET(req: Request) {
@@ -19,7 +19,5 @@ export async function GET(req: Request) {
     const db = await getDb();
     await db.updateUser(user.id, { plan: tier });
   }
-  return NextResponse.redirect(
-    new URL(`/settings?upgraded=${tier ?? ""}`, req.url),
-  );
+  return NextResponse.redirect(new URL(`/settings?upgraded=${tier ?? ""}`, req.url));
 }
