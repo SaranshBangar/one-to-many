@@ -26,26 +26,78 @@ export async function summarize(transcript: string): Promise<string> {
   });
 }
 
-/** Transcribe an uploaded audio/video file via Gemini's multimodal input. */
-export async function transcribeAudio(base64: string, mimeType: string): Promise<string> {
-  const { GoogleGenAI } = await import("@google/genai");
+// Inline multimodal data must fit in the ~20MB request body once base64-encoded
+// (which inflates bytes by ~33%). Above this raw size we stage via the Files API.
+const INLINE_MAX_BYTES = 15 * 1024 * 1024;
+
+const TRANSCRIBE_PROMPT =
+  "Transcribe this recording to plain text. Output only the spoken words as a clean transcript, with no timestamps, speaker labels, or commentary.";
+
+/**
+ * Transcribe an uploaded audio/video file via Gemini's multimodal input.
+ * Small files go inline in a single request; large files are staged through
+ * the Files API (upload → poll until ACTIVE → reference by URI), which lifts
+ * the cap to Gemini's 2GB / 48h file limit.
+ */
+export async function transcribeAudio(bytes: Buffer, mimeType: string): Promise<string> {
+  const { GoogleGenAI, createPartFromUri, createUserContent, FileState } = await import(
+    "@google/genai"
+  );
   const ai = new GoogleGenAI({ apiKey: env.gemini.apiKey! });
-  const res = await ai.models.generateContent({
-    model: env.gemini.model,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: mimeType || "audio/mpeg", data: base64 } },
-          {
-            text: "Transcribe this recording to plain text. Output only the spoken words as a clean transcript, with no timestamps, speaker labels, or commentary.",
-          },
-        ],
-      },
-    ],
-    config: { temperature: 0 },
+  const mime = mimeType || "audio/mpeg";
+
+  // Small files: inline base64, one round-trip.
+  if (bytes.byteLength <= INLINE_MAX_BYTES) {
+    const res = await ai.models.generateContent({
+      model: env.gemini.model,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: mime, data: bytes.toString("base64") } },
+            { text: TRANSCRIBE_PROMPT },
+          ],
+        },
+      ],
+      config: { temperature: 0 },
+    });
+    return (res.text ?? "").trim();
+  }
+
+  // Large files: stage through the Files API, then reference by URI.
+  const uploaded = await ai.files.upload({
+    file: new Blob([new Uint8Array(bytes)], { type: mime }),
+    config: { mimeType: mime },
   });
-  return (res.text ?? "").trim();
+  try {
+    // Files land in PROCESSING; wait for ACTIVE before generating.
+    let file = uploaded;
+    const startedAt = Date.now();
+    while (file.state === FileState.PROCESSING) {
+      if (Date.now() - startedAt > 120_000) {
+        throw new Error("Transcription timed out while Gemini processed the file.");
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+      file = await ai.files.get({ name: file.name! });
+    }
+    if (file.state === FileState.FAILED || !file.uri) {
+      throw new Error("Gemini could not process this file.");
+    }
+    const res = await ai.models.generateContent({
+      model: env.gemini.model,
+      contents: createUserContent([
+        createPartFromUri(file.uri, file.mimeType ?? mime),
+        TRANSCRIBE_PROMPT,
+      ]),
+      config: { temperature: 0 },
+    });
+    return (res.text ?? "").trim();
+  } finally {
+    // Don't leave staged files lingering against the account quota.
+    if (uploaded.name) {
+      await ai.files.delete({ name: uploaded.name }).catch(() => {});
+    }
+  }
 }
 
 /** Generate one platform's content in the requested tone. */

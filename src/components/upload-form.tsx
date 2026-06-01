@@ -68,6 +68,8 @@ export function UploadForm({
           access: "public",
           handleUploadUrl: "/api/blob-upload",
           contentType: file.type || undefined,
+          // Chunk + retry large media instead of one giant PUT.
+          multipart: true,
         });
         const tr = await fetch("/api/transcribe", {
           method: "POST",
@@ -157,7 +159,7 @@ export function UploadForm({
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
             <span className="mt-1 text-xs text-muted-2">
-              MP4 · MP3 · WAV · M4A — up to 20MB
+              MP4 · MP3 · WAV · M4A — up to 200MB
             </span>
           </label>
         )}

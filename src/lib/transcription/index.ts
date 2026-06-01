@@ -72,7 +72,7 @@ export async function transcribeUpload(
 
   // 2. Gemini handles the audio directly, no binaries required.
   if (!mock.ai) {
-    return transcribeAudio(bytes.toString("base64"), mimeType);
+    return transcribeAudio(bytes, mimeType);
   }
 
   // 3. Fully mocked.

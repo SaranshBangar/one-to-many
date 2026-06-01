@@ -4,8 +4,9 @@ import { getSessionUser } from "@/lib/session";
 
 // Issues short-lived client tokens so the browser can upload media straight to
 // Vercel Blob, bypassing the 4.5MB serverless request-body limit. The bytes
-// never pass through this function.
-const MAX_BYTES = 20 * 1024 * 1024;
+// never pass through this function. Large files are transcribed via Gemini's
+// Files API; the cap here guards function memory when the blob is fetched back.
+const MAX_BYTES = 200 * 1024 * 1024;
 
 export async function POST(req: Request) {
   const body = (await req.json()) as HandleUploadBody;

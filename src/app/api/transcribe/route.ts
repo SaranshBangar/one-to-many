@@ -8,9 +8,9 @@ import { transcribeUpload } from "@/lib/transcription";
 // clamps to 60s, Pro honors up to 300.
 export const maxDuration = 300;
 
-// Gemini inline multimodal caps around 20MB. The blob upload is already capped
-// to the same size in /api/blob-upload.
-const MAX_BYTES = 20 * 1024 * 1024;
+// Files up to this size are transcribed (inline under ~15MB, Files API above).
+// Matches the cap in /api/blob-upload; bounds function memory when buffering.
+const MAX_BYTES = 200 * 1024 * 1024;
 
 const Body = z.object({
   // A Vercel Blob URL produced by the client upload. Bytes don't pass through
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     const bytes = Buffer.from(await res.arrayBuffer());
     if (bytes.byteLength > MAX_BYTES) {
       return NextResponse.json(
-        { error: "File is over the 20MB transcription limit. Paste a transcript instead." },
+        { error: "File is over the 200MB transcription limit. Paste a transcript instead." },
         { status: 413 },
       );
     }
