@@ -61,9 +61,19 @@ export function UploadForm({
       let payload: Record<string, unknown>;
       if (tab === "file") {
         if (!file) throw new Error("Choose a file first.");
-        const fd = new FormData();
-        fd.append("file", file);
-        const tr = await fetch("/api/transcribe", { method: "POST", body: fd });
+        // Upload straight to Vercel Blob from the browser — Vercel caps API
+        // request bodies at 4.5MB, so the file can't go through our route.
+        const { upload } = await import("@vercel/blob/client");
+        const blob = await upload(file.name, file, {
+          access: "public",
+          handleUploadUrl: "/api/blob-upload",
+          contentType: file.type || undefined,
+        });
+        const tr = await fetch("/api/transcribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: blob.url, filename: file.name }),
+        });
         const td = await tr.json();
         if (!tr.ok) throw new Error(td.error || "Transcription failed");
         payload = {

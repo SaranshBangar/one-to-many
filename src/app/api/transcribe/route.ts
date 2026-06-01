@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { del } from "@vercel/blob";
 import { getSessionUser } from "@/lib/session";
 import { transcribeUpload } from "@/lib/transcription";
 
@@ -6,9 +8,16 @@ import { transcribeUpload } from "@/lib/transcription";
 // clamps to 60s, Pro honors up to 300.
 export const maxDuration = 300;
 
-// Inline multimodal requests cap around 20MB. Larger media should be pasted as
-// a transcript instead.
+// Gemini inline multimodal caps around 20MB. The blob upload is already capped
+// to the same size in /api/blob-upload.
 const MAX_BYTES = 20 * 1024 * 1024;
+
+const Body = z.object({
+  // A Vercel Blob URL produced by the client upload. Bytes don't pass through
+  // the request body (Vercel caps that at 4.5MB) — we fetch them here.
+  url: z.string().url(),
+  filename: z.string().trim().max(300).optional().default("audio"),
+});
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -16,30 +25,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let form: FormData;
+  let parsed;
   try {
-    form = await req.formData();
+    parsed = Body.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Expected a file upload." }, { status: 400 });
+    return NextResponse.json({ error: "Expected an uploaded file URL." }, { status: 400 });
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      {
-        error:
-          "File is over the 20MB in-app limit. Trim the clip, or paste a transcript instead.",
-      },
-      { status: 413 },
-    );
+  // Only accept blobs from our own store, never arbitrary URLs (SSRF guard).
+  if (!/^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(parsed.url)) {
+    return NextResponse.json({ error: "Unrecognized upload URL." }, { status: 400 });
   }
 
   try {
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const text = await transcribeUpload(bytes, file.type, file.name);
+    const res = await fetch(parsed.url);
+    if (!res.ok) {
+      return NextResponse.json({ error: "Couldn't read the uploaded file." }, { status: 400 });
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.byteLength > MAX_BYTES) {
+      return NextResponse.json(
+        { error: "File is over the 20MB transcription limit. Paste a transcript instead." },
+        { status: 413 },
+      );
+    }
+    const mime = res.headers.get("content-type") || "audio/mpeg";
+    const text = await transcribeUpload(bytes, mime, parsed.filename);
     if (!text || text.trim().length < 20) {
       return NextResponse.json(
         { error: "Couldn't get a usable transcript from that file. Try another, or paste a transcript." },
@@ -52,5 +63,8 @@ export async function POST(req: Request) {
       { error: e instanceof Error ? e.message : "Transcription failed." },
       { status: 500 },
     );
+  } finally {
+    // The blob is a transient staging file; remove it once transcribed.
+    await del(parsed.url).catch(() => {});
   }
 }
