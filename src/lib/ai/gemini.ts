@@ -3,17 +3,42 @@ import type { Platform, Tone } from "../db/types";
 import { PLATFORMS } from "../content";
 import { FOUNDER_VOICE_SYSTEM, summarizePrompt, generatePrompt } from "./prompts";
 
+/**
+ * Retry transient Gemini failures with exponential backoff. Google returns 503
+ * UNAVAILABLE ("high demand") and 429 RESOURCE_EXHAUSTED under load; both clear
+ * on their own. Non-transient errors (bad key, 400) throw immediately.
+ */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      const transient =
+        /\b(503|429|UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand)\b/i.test(msg);
+      if (!transient || i === attempts - 1) throw e;
+      // 1s, 2s, 4s + jitter.
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i + Math.random() * 250));
+    }
+  }
+  throw lastErr;
+}
+
 async function callGemini(prompt: string, opts: { system?: string; temperature?: number } = {}): Promise<string> {
   const { GoogleGenAI } = await import("@google/genai");
   const ai = new GoogleGenAI({ apiKey: env.gemini.apiKey! });
-  const res = await ai.models.generateContent({
-    model: env.gemini.model,
-    contents: prompt,
-    config: {
-      systemInstruction: opts.system,
-      temperature: opts.temperature ?? 0.9,
-    },
-  });
+  const res = await withRetry(() =>
+    ai.models.generateContent({
+      model: env.gemini.model,
+      contents: prompt,
+      config: {
+        systemInstruction: opts.system,
+        temperature: opts.temperature ?? 0.9,
+      },
+    }),
+  );
   return (res.text ?? "").trim();
 }
 
@@ -48,19 +73,21 @@ export async function transcribeAudio(bytes: Buffer, mimeType: string): Promise<
 
   // Small files: inline base64, one round-trip.
   if (bytes.byteLength <= INLINE_MAX_BYTES) {
-    const res = await ai.models.generateContent({
-      model: env.gemini.model,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: mime, data: bytes.toString("base64") } },
-            { text: TRANSCRIBE_PROMPT },
-          ],
-        },
-      ],
-      config: { temperature: 0 },
-    });
+    const res = await withRetry(() =>
+      ai.models.generateContent({
+        model: env.gemini.model,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: mime, data: bytes.toString("base64") } },
+              { text: TRANSCRIBE_PROMPT },
+            ],
+          },
+        ],
+        config: { temperature: 0 },
+      }),
+    );
     return (res.text ?? "").trim();
   }
 
@@ -83,14 +110,19 @@ export async function transcribeAudio(bytes: Buffer, mimeType: string): Promise<
     if (file.state === FileState.FAILED || !file.uri) {
       throw new Error("Gemini could not process this file.");
     }
-    const res = await ai.models.generateContent({
-      model: env.gemini.model,
-      contents: createUserContent([
-        createPartFromUri(file.uri, file.mimeType ?? mime),
-        TRANSCRIBE_PROMPT,
-      ]),
-      config: { temperature: 0 },
-    });
+    // Capture into consts so narrowing survives inside the retry closure.
+    const uri = file.uri;
+    const fileMime = file.mimeType ?? mime;
+    const res = await withRetry(() =>
+      ai.models.generateContent({
+        model: env.gemini.model,
+        contents: createUserContent([
+          createPartFromUri(uri, fileMime),
+          TRANSCRIBE_PROMPT,
+        ]),
+        config: { temperature: 0 },
+      }),
+    );
     return (res.text ?? "").trim();
   } finally {
     // Don't leave staged files lingering against the account quota.
