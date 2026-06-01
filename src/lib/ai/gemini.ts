@@ -26,6 +26,28 @@ export async function summarize(transcript: string): Promise<string> {
   });
 }
 
+/** Transcribe an uploaded audio/video file via Gemini's multimodal input. */
+export async function transcribeAudio(base64: string, mimeType: string): Promise<string> {
+  const { GoogleGenAI } = await import("@google/genai");
+  const ai = new GoogleGenAI({ apiKey: env.gemini.apiKey! });
+  const res = await ai.models.generateContent({
+    model: env.gemini.model,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { mimeType: mimeType || "audio/mpeg", data: base64 } },
+          {
+            text: "Transcribe this recording to plain text. Output only the spoken words as a clean transcript, with no timestamps, speaker labels, or commentary.",
+          },
+        ],
+      },
+    ],
+    config: { temperature: 0 },
+  });
+  return (res.text ?? "").trim();
+}
+
 /** Generate one platform's content in the requested tone. */
 export async function generate(args: { platform: Platform; tone: Tone; summary: string; transcript: string }): Promise<string> {
   if (mock.ai) return mockOutput(args.platform, args.tone, args.summary);

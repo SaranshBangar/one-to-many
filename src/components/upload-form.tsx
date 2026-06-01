@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Link2, Upload, FileText, Check } from "lucide-react";
+import { Upload, FileText, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Textarea, Label } from "@/components/ui/input";
+import { Textarea, Label } from "@/components/ui/input";
 import { PlatformGlyph, Eyebrow } from "@/components/ui/platform";
 import { useToast } from "@/components/ui/toast";
 import { TONES, TONE_KEYS, PLATFORMS, PLATFORM_KEYS } from "@/lib/content";
@@ -13,8 +13,8 @@ import type { Platform, SourceType, Tone } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 
 type Tab = SourceType;
-const TABS: { id: Tab; label: string; icon: typeof Link2 }[] = [
-  { id: "youtube", label: "YouTube link", icon: Link2 },
+// YouTube is hidden: fetching its audio needs yt-dlp, which serverless can't run.
+const TABS: { id: Tab; label: string; icon: typeof Upload }[] = [
   { id: "file", label: "Upload file", icon: Upload },
   { id: "transcript", label: "Paste transcript", icon: FileText },
 ];
@@ -30,9 +30,8 @@ export function UploadForm({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [tab, setTab] = useState<Tab>("youtube");
-  const [url, setUrl] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [tab, setTab] = useState<Tab>("file");
+  const [file, setFile] = useState<File | null>(null);
   const [transcript, setTranscript] = useState("");
   const [tone, setTone] = useState<Tone>(defaultTone);
   const [platforms, setPlatforms] = useState<Platform[]>([...PLATFORM_KEYS]);
@@ -46,8 +45,7 @@ export function UploadForm({
 
   const ready =
     platforms.length > 0 &&
-    ((tab === "youtube" && /youtu/.test(url)) ||
-      (tab === "file" && !!fileName) ||
+    ((tab === "file" && !!file) ||
       (tab === "transcript" && transcript.trim().length >= 20));
 
   async function submit() {
@@ -57,16 +55,37 @@ export function UploadForm({
     }
     setSubmitting(true);
     try {
+      // Build the project payload. An uploaded file is transcribed first via
+      // /api/transcribe, then submitted as a ready-made transcript so the rest
+      // of the pipeline is identical to pasted text.
+      let payload: Record<string, unknown>;
+      if (tab === "file") {
+        if (!file) throw new Error("Choose a file first.");
+        const fd = new FormData();
+        fd.append("file", file);
+        const tr = await fetch("/api/transcribe", { method: "POST", body: fd });
+        const td = await tr.json();
+        if (!tr.ok) throw new Error(td.error || "Transcription failed");
+        payload = {
+          sourceType: "transcript",
+          transcript: td.text,
+          title: file.name,
+          tone,
+          platforms,
+        };
+      } else {
+        payload = {
+          sourceType: "transcript",
+          transcript,
+          tone,
+          platforms,
+        };
+      }
+
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourceType: tab,
-          sourceRef: tab === "youtube" ? url : tab === "file" ? fileName : "",
-          transcript: tab === "transcript" ? transcript : undefined,
-          tone,
-          platforms,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
@@ -109,41 +128,26 @@ export function UploadForm({
       </div>
 
       <Card>
-        {tab === "youtube" && (
-          <div className="space-y-2">
-            <Label>Paste YouTube link</Label>
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              inputMode="url"
-            />
-            <p className="text-xs text-muted">
-              We pull the audio and transcribe it locally.
-            </p>
-          </div>
-        )}
-
         {tab === "file" && (
           <label
             className={cn(
               "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-12 text-center transition-colors hover:border-accent",
-              fileName && "border-accent",
+              file && "border-accent",
             )}
           >
             <Upload size={28} className="text-muted" />
             <span className="text-sm">
-              {fileName || "Drag a MP4, MP3, or audio file here"}
+              {file?.name || "Drag a MP4, MP3, or audio file here"}
             </span>
             <span className="text-xs text-muted">or click to browse</span>
             <input
               type="file"
               accept="audio/*,video/*"
               className="hidden"
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
             <span className="mt-1 text-xs text-muted-2">
-              MP4 · MP3 · WAV · M4A
+              MP4 · MP3 · WAV · M4A — up to 20MB
             </span>
           </label>
         )}

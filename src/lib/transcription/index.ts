@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { env, mock } from "../env";
+import { transcribeAudio } from "../ai/gemini";
 import type { SourceType } from "../db/types";
 
 const MOCK_TRANSCRIPT = `Welcome back to the show. Today I want to talk about how we actually got our first hundred customers, because when we launched we had nothing, no audience, no email list, no following.
@@ -43,6 +44,39 @@ export async function transcribeSource(input: TranscribeInput): Promise<string> 
 
   // sourceType === "file": sourceRef is a local path to the uploaded media.
   return runWhisper(input.sourceRef);
+}
+
+/**
+ * Transcribe an uploaded audio/video file. Decision order (mock-first):
+ *   1. Local Whisper CLI when WHISPER_BIN is set (dev machines).
+ *   2. Gemini multimodal when AI is live but Whisper isn't (serverless).
+ *   3. Canned mock transcript when nothing is configured.
+ */
+export async function transcribeUpload(
+  bytes: Buffer,
+  mimeType: string,
+  filename: string,
+): Promise<string> {
+  // 1. Local Whisper (needs ffmpeg + WHISPER_BIN on PATH).
+  if (!mock.transcription) {
+    const dir = await mkdtemp(join(tmpdir(), "o2m-up-"));
+    const ext = filename.match(/\.[^.]+$/)?.[0] ?? ".m4a";
+    const path = join(dir, `audio${ext}`);
+    try {
+      await writeFile(path, bytes);
+      return await runWhisper(path);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  // 2. Gemini handles the audio directly, no binaries required.
+  if (!mock.ai) {
+    return transcribeAudio(bytes.toString("base64"), mimeType);
+  }
+
+  // 3. Fully mocked.
+  return MOCK_TRANSCRIPT;
 }
 
 /** Download a YouTube URL's audio track using yt-dlp (must be on PATH). */
