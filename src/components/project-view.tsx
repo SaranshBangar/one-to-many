@@ -2,28 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Check,
-  Copy,
-  Pencil,
-  RefreshCw,
-  Plus,
-  AlertCircle,
-  Sparkle,
-} from "lucide-react";
+import { Check, Copy, Pencil, RefreshCw, Plus, AlertCircle, Sparkle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/input";
 import { Badge, Spinner } from "@/components/ui/misc";
 import { PlatformGlyph } from "@/components/ui/platform";
 import { useToast } from "@/components/ui/toast";
-import {
-  PLATFORMS,
-  TONES,
-  TONE_KEYS,
-  STATUS_STEPS,
-  statusIndex,
-} from "@/lib/content";
+import { PLATFORMS, TONES, TONE_KEYS, STATUS_STEPS, statusIndex } from "@/lib/content";
 import type { Output, Project, Tone } from "@/lib/db/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -33,13 +19,7 @@ const TIPS = [
   "The best founder content sounds like a DM, not a press release.",
 ];
 
-export function ProjectView({
-  initial,
-  toneEnabled,
-}: {
-  initial: Project;
-  toneEnabled: boolean;
-}) {
+export function ProjectView({ initial, toneEnabled }: { initial: Project; toneEnabled: boolean }) {
   const [project, setProject] = useState(initial);
   const toast = useToast();
   const done = project.status === "ready" || project.status === "failed";
@@ -60,9 +40,7 @@ export function ProjectView({
   const updateOutput = useCallback((o: Output) => {
     setProject((p) => ({
       ...p,
-      outputs: p.outputs.some((x) => x.platform === o.platform)
-        ? p.outputs.map((x) => (x.platform === o.platform ? o : x))
-        : [...p.outputs, o],
+      outputs: p.outputs.some((x) => x.platform === o.platform) ? p.outputs.map((x) => (x.platform === o.platform ? o : x)) : [...p.outputs, o],
     }));
   }, []);
 
@@ -84,9 +62,7 @@ export function ProjectView({
   }
 
   async function copyAll() {
-    const text = project.outputs
-      .map((o) => `=== ${PLATFORMS[o.platform].label} ===\n${o.content}`)
-      .join("\n\n");
+    const text = project.outputs.map((o) => `=== ${PLATFORMS[o.platform].label} ===\n${o.content}`).join("\n\n");
     await navigator.clipboard.writeText(text);
     toast("All posts copied to clipboard", "success");
   }
@@ -112,13 +88,7 @@ export function ProjectView({
 
       <div className="space-y-4">
         {project.outputs.map((o) => (
-          <OutputCard
-            key={o.platform}
-            projectId={project.id}
-            output={o}
-            toneEnabled={toneEnabled}
-            onChange={updateOutput}
-          />
+          <OutputCard key={o.platform} projectId={project.id} output={o} toneEnabled={toneEnabled} onChange={updateOutput} />
         ))}
       </div>
 
@@ -141,51 +111,32 @@ function Processing({ project }: { project: Project }) {
   return (
     <div className="mx-auto max-w-lg py-10">
       <h1 className="text-center text-xl font-bold">Repurposing your content…</h1>
-      <p className="mt-1 text-center text-sm text-muted">
-        Typically takes 30–90 seconds.
-      </p>
+      <p className="mt-1 text-center text-sm text-muted">Typically takes 30–90 seconds.</p>
 
       <Card className="mt-8">
         <ol className="space-y-4">
           {STATUS_STEPS.map((step, i) => {
-            const state =
-              i < current ? "done" : i === current ? "active" : "todo";
+            const state = i < current ? "done" : i === current ? "active" : "todo";
             return (
               <li key={step.status} className="flex items-center gap-3">
                 <span
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-full border text-xs",
-                    state === "done" &&
-                      "border-success bg-success/15 text-success",
+                    state === "done" && "border-success bg-success/15 text-success",
                     state === "active" && "border-accent text-accent",
                     state === "todo" && "border-border text-muted-2",
                   )}
                 >
-                  {state === "done" ? (
-                    <Check size={14} />
-                  ) : state === "active" ? (
-                    <Spinner size={14} />
-                  ) : (
-                    i + 1
-                  )}
+                  {state === "done" ? <Check size={14} /> : state === "active" ? <Spinner size={14} /> : i + 1}
                 </span>
-                <span
-                  className={cn(
-                    "text-sm",
-                    state === "todo" ? "text-muted" : "text-foreground",
-                  )}
-                >
-                  {step.label}
-                </span>
+                <span className={cn("text-sm", state === "todo" ? "text-muted" : "text-foreground")}>{step.label}</span>
               </li>
             );
           })}
         </ol>
       </Card>
 
-      <p className="mt-6 rounded-lg border border-border bg-surface/50 p-4 text-center text-sm text-muted">
-        💡 {tip}
-      </p>
+      <p className="mt-6 rounded-lg border border-border bg-surface/50 p-4 text-center text-sm text-muted">{tip}</p>
     </div>
   );
 }
@@ -266,9 +217,7 @@ function OutputCard({
         <PlatformGlyph id={output.platform} size={40} />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[15.5px] font-semibold">{meta.label}</span>
-          <span className="font-mono text-[11.5px] text-muted-2">
-            {meta.blurb}
-          </span>
+          <span className="font-mono text-[11.5px] text-muted-2">{meta.blurb}</span>
         </div>
         <Badge>
           <Sparkle size={11} className="text-accent" fill="currentColor" strokeWidth={0} />
@@ -279,17 +228,10 @@ function OutputCard({
       {/* body */}
       {editing ? (
         <div className="p-[22px]">
-          <Textarea
-            ref={taRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="min-h-[180px] text-[14.5px]"
-          />
+          <Textarea ref={taRef} value={draft} onChange={(e) => setDraft(e.target.value)} className="min-h-[180px] text-[14.5px]" />
         </div>
       ) : (
-        <div className="whitespace-pre-wrap break-words px-[22px] py-5 text-[14.5px] leading-[1.62] text-foreground">
-          {output.content}
-        </div>
+        <div className="whitespace-pre-wrap break-words px-[22px] py-5 text-[14.5px] leading-[1.62] text-foreground">{output.content}</div>
       )}
 
       {/* foot */}
@@ -312,27 +254,14 @@ function OutputCard({
           </>
         ) : (
           <>
-            <Button
-              size="sm"
-              variant={copied ? "secondary" : "primary"}
-              onClick={copy}
-            >
-              {copied ? (
-                <Check size={14} className="text-success" />
-              ) : (
-                <Copy size={14} />
-              )}
+            <Button size="sm" variant={copied ? "secondary" : "primary"} onClick={copy}>
+              {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
               {copied ? "Copied!" : "Copy"}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
               <Pencil size={14} /> Edit
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              loading={busy}
-              onClick={() => regenerate(tone)}
-            >
+            <Button size="sm" variant="ghost" loading={busy} onClick={() => regenerate(tone)}>
               <RefreshCw size={14} /> Regenerate
             </Button>
             {toneEnabled && (
@@ -350,9 +279,7 @@ function OutputCard({
                 ))}
               </select>
             )}
-            <span className="ml-auto font-mono text-[11px] text-muted-2">
-              {words} words
-            </span>
+            <span className="ml-auto font-mono text-[11px] text-muted-2">{words} words</span>
           </>
         )}
       </div>
