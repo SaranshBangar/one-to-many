@@ -21,6 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "OneToMany",
   description: "AI content repurposing built for founders. Preserves your voice. No generic fluff.",
+  other: {
+    "google-adsense-account": "ca-pub-4851546257120071",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
